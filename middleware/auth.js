@@ -35,11 +35,11 @@ function authenticateJWT(req, res, next) {
 
 function ensureLoggedIn(req, res, next) {
   try {
-    // const usertoken = jwt.decode(req.token)
-    // if (!usertoken.isAdmin||res.locals!=usertoken.username){
-    //   throw new ExpressError("Current User not Authorized",400)
-    // }
-    console.log(res.locals)
+    const usertoken = jwt.decode(req.token)
+    console.log(jwt.verify(req.token,SECRET_KEY))
+    if (!usertoken.isAdmin||res.locals!=usertoken.username){
+      throw new ExpressError("Current User not Authorized",400)
+    }
     if (!res.locals.user) throw new UnauthorizedError();
     return next();
   } catch (err) {

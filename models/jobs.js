@@ -9,51 +9,51 @@ const { sqlForPartialUpdate } = require("../helpers/sql");
 class Job {
   /** Create a job (from data), update db, return new job data.
    *
-   * data should be { handle, name, description, numEmployees, logoUrl }
+   * data should be { title, salary, equity, company_handle }
    *
-   * Returns { handle, name, description, numEmployees, logoUrl }
+   * Returns { title, salary, equity, company_handle }
    *
-   * Throws BadRequestError if company already in database.
+   * Throws BadRequestError if job title for company already in database.
    * */
 
-  static async create({ title, salary, equity,company_handle }) {
+  static async create({ title, salary, equity, company_handle }) {
     const duplicateCheck = await db.query(
-      `SELECT title
+      `SELECT title, company_handle
            FROM jobs
            WHERE title = $1`,
       [title]);
 
     if (duplicateCheck.rows[0])
       throw new BadRequestError(`Duplicate listing: ${title}`);
-
+console.log(company_handle)
     const result = await db.query(
       `INSERT INTO jobs
            (title,salary,equity,company_handle)
            VALUES ($1, $2, $3, $4)
-           RETURNING title,salary,equity,company_handle AS companyHandle`,
+           RETURNING title,salary,equity,company_handle`,
       [
-        title,salary,equity,company_handle
+        title, salary, equity, company_handle
       ],
     );
     const job = result.rows[0];
-
+    console.log(`job model `,job)
     return job;
   }
 
   /** Find all jobs.
    *
-   * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
+   * Returns [{ title, salary, equity, company_handle }, ...]
    * */
 
   static async findAll() {
     const jobsRes = await db.query(
-      `SELECT title,salary,equity,company_handle AS companyHandle
+      `SELECT title,salary,equity,company_handle
            FROM jobs
-           ORDER BY name`);
+           ORDER BY title`);
     return jobsRes.rows;
   }
 
-  /** Given a company handle, return data about company.
+  /** Given a job title, return data about listing.
    *
    * Returns { handle, name, description, numEmployees, logoUrl, jobs }
    *   where jobs is [{ id, title, salary, equity, companyHandle }, ...]
@@ -63,57 +63,53 @@ class Job {
 
   static async get(title) {
     const jobRes = await db.query(
-      `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
+      `SELECT title,salary,equity, company_handle
            FROM jobs
-           WHERE handle = $1`,
-      [handle]);
+           WHERE title = $1`,
+      [title]);
 
     const job = jobRes.rows[0];
 
-    if (!job) throw new NotFoundError(`No job: ${handle}`);
+    if (!job) throw new NotFoundError(`No job: ${title}`);
 
     return job;
   }
 
-//   static async getfiltered(query) {
-//     /** re-purposing sqlForPartialUpdate - changes to read query and populate     */
-//     const keys = Object.keys(query);
-//     /**checking if min greater than max  */
-//     if (query.minEmployees >= query.maxEmployees) 
-//       throw new ExpressError("Min cannot be greater than max", 400)
-//     ;
-//     /** check to see keys exist */
-//     if (keys.length === 0) throw new BadRequestError("No data");
-    
-//     /**mapping keys to SQL expressions using booleans */
-//     const cols = keys.map((colName, idx) =>
-//       colName.includes("min") ? `num_employees>$${idx + 1}` : colName.includes("max") ? `num_employees<$${idx + 1}` :
-//         `handle=$${idx + 1}`)
-//     /**joins cols array to single SQL criteria string via .join with AND
-//       sets values as array of values for sql query*/
-//     let filterVars = {
-//       setCols: cols.join(" AND "),
-//       values: Object.values(query),
-//     }
-//     const jobsRes = await db.query(
-//       `SELECT handle,
-//               name,
-//               description,
-//               num_employees AS "numEmployees",
-//               logo_url AS "logoUrl"
-//        FROM jobs WHERE ${filterVars.setCols}
-//         ORDER BY name
-//        `, filterVars.values);
-//        /** if nothing returns throw error */
-//     if (jobsRes.rows.length === 0) {
-//       throw new ExpressError("No jobs match that criteria", 400)
-//     }
-//     return jobsRes.rows
-//   }
+  //   static async getfiltered(query) {
+  //     /** re-purposing sqlForPartialUpdate - changes to read query and populate     */
+  //     const keys = Object.keys(query);
+  //     /**checking if min greater than max  */
+  //     if (query.minEmployees >= query.maxEmployees) 
+  //       throw new ExpressError("Min cannot be greater than max", 400)
+  //     ;
+  //     /** check to see keys exist */
+  //     if (keys.length === 0) throw new BadRequestError("No data");
+
+  //     /**mapping keys to SQL expressions using booleans */
+  //     const cols = keys.map((colName, idx) =>
+  //       colName.includes("min") ? `num_employees>$${idx + 1}` : colName.includes("max") ? `num_employees<$${idx + 1}` :
+  //         `handle=$${idx + 1}`)
+  //     /**joins cols array to single SQL criteria string via .join with AND
+  //       sets values as array of values for sql query*/
+  //     let filterVars = {
+  //       setCols: cols.join(" AND "),
+  //       values: Object.values(query),
+  //     }
+  //     const jobsRes = await db.query(
+  //       `SELECT handle,
+  //               name,
+  //               description,
+  //               num_employees AS "numEmployees",
+  //               logo_url AS "logoUrl"
+  //        FROM jobs WHERE ${filterVars.setCols}
+  //         ORDER BY name
+  //        `, filterVars.values);
+  //        /** if nothing returns throw error */
+  //     if (jobsRes.rows.length === 0) {
+  //       throw new ExpressError("No jobs match that criteria", 400)
+  //     }
+  //     return jobsRes.rows
+  //   }
 
   /** Update job data with `data`.
    *
@@ -131,7 +127,7 @@ class Job {
 
   static async update(id, data) {
     const { setCols, values } = sqlForPartialUpdate(
-      data,{});
+      data, {});
     const jobIdVarIdx = "$" + (values.length + 1);
 
     const querySql = `UPDATE jobs 
@@ -157,7 +153,7 @@ class Job {
 
   static async remove(id) {
 
-    
+
     const result = await db.query(
       `DELETE
            FROM jobs
