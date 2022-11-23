@@ -35,22 +35,34 @@ function authenticateJWT(req, res, next) {
 
 function ensureLoggedIn(req, res, next) {
   try {
-    const usertoken = jwt.decode(req.token)
-    console.log(jwt.verify(req.token,SECRET_KEY))
-    if (!usertoken.isAdmin||res.locals!=usertoken.username){
-      throw new ExpressError("Current User not Authorized",400)
-    }
     if (!res.locals.user) throw new UnauthorizedError();
     return next();
   } catch (err) {
-    console.log(res.locals.user)
     return next(err);
   }
 }
 
-function checkAdmin(req,res,next) {
-  try{
-    
+function checkAdmin(req, res, next) {
+  try {
+    console.log(res.locals.user)
+    if (res.locals.user==undefined || !res.locals.user.isAdmin) {
+      checkHandle(req,res,next)
+      throw new UnauthorizedError()
+    }
+    return next()
+  } catch (err) {
+    return next(err)
+  }
+}
+
+function checkHandle(req,res,next) {
+  try {
+    if(res.locals.user){
+    const token = req.headers.authorization.replace(/^[Bb]earer /, "").trim()
+    const usertoken = jwt.decode(token, SECRET_KEY)
+    if (req.params.username!==usertoken.username) throw new UnauthorizedError();}
+    else{throw new UnauthorizedError()}
+    return next()
   }catch(err){
     return next(err)
   }
