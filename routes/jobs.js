@@ -6,7 +6,7 @@ const jsonschema = require("jsonschema");
 const express = require("express");
 
 const { BadRequestError } = require("../expressError");
-const { ensureLoggedIn } = require("../middleware/auth");
+const { checkAdminorActiveUser } = require("../middleware/auth");
 const Job = require("../models/job");
 
 const jobNewSchema = require("../schemas/jobNew.json");
@@ -16,15 +16,19 @@ const db = require("../db");
 const router = new express.Router();
 
 
-
 router.get("/", async function (req, res, next) {
     try {
-        const results = await Job.findAll()
-        return res.json({jobs : results})
+      /** check if req.query used */
+      if(Object.values(req.query)!=0){
+        /** if used, return filtered job/jobs */
+        const filtered= await Job.getfiltered(req.query)
+        return res.json(filtered)
+      }else{const jobs = await Job.findAll();
+      return res.json({ jobs })};
     } catch (err) {
-        return next(err)
+      return next(err);
     }
-})
+  });
 
 /** POST / { job } =>  { job }
  *
@@ -34,7 +38,7 @@ router.get("/", async function (req, res, next) {
  *
  * Authorization required: Admin
  */
-router.post("/",/**ensureLoggedIn,*/ async function (req, res, next) {
+router.post("/",checkAdminorActiveUser, async function (req, res, next) {
     try {
         const validator = jsonschema.validate(req.body, jobNewSchema);
         if (!validator.valid) {
@@ -61,7 +65,7 @@ router.post("/",/**ensureLoggedIn,*/ async function (req, res, next) {
  * Authorization required: Admin
  */
 
-router.patch("/:title", /**ensureLoggedIn,*/ async function (req, res, next) {
+router.patch("/:title", checkAdminorActiveUser, async function (req, res, next) {
     try {
         const validator = jsonschema.validate(req.body, jobUpdateSchema);
         if (!validator.valid) {
@@ -76,7 +80,7 @@ router.patch("/:title", /**ensureLoggedIn,*/ async function (req, res, next) {
     }
 });
 
-router.delete("/:id",/**ensureLoggedIn,*/ async function (req, res, next) {
+router.delete("/:id",checkAdminorActiveUser, async function (req, res, next) {
     try {
         await Job.remove(req.params.id)
         return res.json({deleted: `Job #${req.params.id} has been deleted`})

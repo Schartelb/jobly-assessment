@@ -42,34 +42,21 @@ function ensureLoggedIn(req, res, next) {
   }
 }
 
-function checkAdmin(req, res, next) {
+function checkAdminorActiveUser(req, res, next) {
   try {
-    console.log(res.locals.user)
-    if (res.locals.user==undefined || !res.locals.user.isAdmin) {
-      checkHandle(req,res,next)
-      throw new UnauthorizedError()
+    const user = res.locals.user;
+    if (!(user && (user.isAdmin || user.username === req.params.username))) {
+      throw new UnauthorizedError();
     }
-    return next()
+    return next();
   } catch (err) {
-    return next(err)
+    return next(err);
   }
 }
 
-function checkHandle(req,res,next) {
-  try {
-    if(res.locals.user){
-    const token = req.headers.authorization.replace(/^[Bb]earer /, "").trim()
-    const usertoken = jwt.decode(token, SECRET_KEY)
-    if (req.params.username!==usertoken.username) throw new UnauthorizedError();}
-    else{throw new UnauthorizedError()}
-    return next()
-  }catch(err){
-    return next(err)
-  }
-}
 
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
-  checkAdmin
+  checkAdminorActiveUser
 };

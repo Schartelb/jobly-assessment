@@ -67,7 +67,7 @@ describe("POST /jobs", function () {
 
 describe("GET /jobs", function () {
   test("ok for anon", async function () {
-    const resp = await request(app).get("/jobs");
+    const resp = await request(app).get("/jobs")
     expect(resp.body).toEqual({
       jobs:
           [{
@@ -82,6 +82,12 @@ describe("GET /jobs", function () {
             equity: "0.2",
             company_handle: "c2"
           },
+          {
+            title: "j3",
+            salary: 30,
+            equity: "0.3",
+            company_handle: "c3"
+          }
           ],
     });
   });
@@ -99,27 +105,8 @@ describe("GET /jobs", function () {
 /************************************** GET /jobs/:handle */
 
 describe("GET /jobs/:title", function () {
-  test("works for anon", async function () {
-    const resp = await request(app).get(`/jobs/j1`);
-    expect(resp.body).toEqual({
-      title: "j1",
-      salary: 10,
-      equity: "0.1",
-      company_handle: "c1"
-    });
-  });
 
-  test("request non-existent job", async function () {
-    const resp = await request(app).get(`/jobs/j3`);
-    expect(resp.body).toEqual({
-      title: "j3",
-      salary: 30,
-      equity: "0.3",
-      company_handle: "c3"
-    });
-  });
-
-  test("not found for no such company", async function () {
+  test("not a valid route", async function () {
     const resp = await request(app).get(`/jobs/nope`);
     expect(resp.statusCode).toEqual(404);
   });

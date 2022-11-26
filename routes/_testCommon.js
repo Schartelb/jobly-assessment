@@ -79,6 +79,10 @@ async function commonBeforeAll() {
     equity: "0.3",
     company_handle: "c3"
   })
+  await User.apply({
+    username: "u1",
+    job_id: "j1"
+  })
 }
 
 async function commonBeforeEach() {

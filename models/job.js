@@ -25,7 +25,7 @@ class Job {
 
     if (duplicateCheck.rows[0])
       throw new BadRequestError(`Duplicate listing: ${title}`);
-console.log(company_handle)
+
     const result = await db.query(
       `INSERT INTO jobs
            (title,salary,equity,company_handle)
@@ -74,41 +74,45 @@ console.log(company_handle)
     return job;
   }
 
-  //   static async getfiltered(query) {
-  //     /** re-purposing sqlForPartialUpdate - changes to read query and populate     */
-  //     const keys = Object.keys(query);
-  //     /**checking if min greater than max  */
-  //     if (query.minEmployees >= query.maxEmployees) 
-  //       throw new ExpressError("Min cannot be greater than max", 400)
-  //     ;
-  //     /** check to see keys exist */
-  //     if (keys.length === 0) throw new BadRequestError("No data");
+    static async getfiltered(query) {
+      /** re-purposing sqlForPartialUpdate - changes to read query and populate     */
+      const keys = Object.keys(query);
+      
+      if(query.title){query.title=`%${query.title}%`}
 
-  //     /**mapping keys to SQL expressions using booleans */
-  //     const cols = keys.map((colName, idx) =>
-  //       colName.includes("min") ? `num_employees>$${idx + 1}` : colName.includes("max") ? `num_employees<$${idx + 1}` :
-  //         `handle=$${idx + 1}`)
-  //     /**joins cols array to single SQL criteria string via .join with AND
-  //       sets values as array of values for sql query*/
-  //     let filterVars = {
-  //       setCols: cols.join(" AND "),
-  //       values: Object.values(query),
-  //     }
-  //     const jobsRes = await db.query(
-  //       `SELECT handle,
-  //               name,
-  //               description,
-  //               num_employees AS "numEmployees",
-  //               logo_url AS "logoUrl"
-  //        FROM jobs WHERE ${filterVars.setCols}
-  //         ORDER BY name
-  //        `, filterVars.values);
-  //        /** if nothing returns throw error */
-  //     if (jobsRes.rows.length === 0) {
-  //       throw new ExpressError("No jobs match that criteria", 400)
-  //     }
-  //     return jobsRes.rows
-  //   }
+      /** check to see keys exist */
+      if (keys.length === 0) throw new BadRequestError("No data");
+
+      /**mapping keys to SQL expressions using booleans */
+      const cols = keys.map((colName, idx) =>
+        colName.includes("title") ? `title LIKE $${idx + 1}` : 
+        colName.includes("min") ? `salary>$${idx + 1}` : 
+        /**checks for equity using identity operator */
+        query.hasEquity==="true"? `equity>$1`:`equity=$1`)
+      /**sets value to zero to be used in filterVars */
+      query.hasEquity=0
+      /**joins cols array to single SQL criteria string via .join with AND
+        sets values as array of values for sql query*/
+      let filterVars = {
+        setCols: cols.join(" AND "),
+        values: Object.values(query),
+      }
+      if(query.hasEquity){console.log(filterVars.values)}
+      console.log(filterVars)
+      const jobsRes = await db.query(
+        `SELECT title,
+                salary,
+                equity,
+                company_handle AS "companyHandle"
+         FROM jobs WHERE ${filterVars.setCols}
+          ORDER BY title
+         `, filterVars.values);
+         /** if nothing returns throw error */
+      if (jobsRes.rows.length === 0) {
+        throw new ExpressError("No jobs match that criteria", 400)
+      }
+      return jobsRes.rows
+    }
 
   /** Update job data with `data`.
    *

@@ -6,8 +6,7 @@ const jsonschema = require("jsonschema");
 const express = require("express");
 
 const { BadRequestError } = require("../expressError");
-const { ensureLoggedIn,
-        checkAdmin } = require("../middleware/auth");
+const { checkAdminorActiveUser } = require("../middleware/auth");
 const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
@@ -25,7 +24,7 @@ const router = new express.Router();
  * Authorization required: login
  */
 
-router.post("/", checkAdmin, async function (req, res, next) {
+router.post("/", checkAdminorActiveUser, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, companyNewSchema);
     if (!validator.valid) {
@@ -93,7 +92,7 @@ router.get("/:handle", async function (req, res, next) {
  * Authorization required: login
  */
 
-router.patch("/:handle", checkAdmin, async function (req, res, next) {
+router.patch("/:handle", checkAdminorActiveUser, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, companyUpdateSchema);
     if (!validator.valid) {
@@ -113,7 +112,7 @@ router.patch("/:handle", checkAdmin, async function (req, res, next) {
  * Authorization: login
  */
 
-router.delete("/:handle", checkAdmin, async function (req, res, next) {
+router.delete("/:handle", checkAdminorActiveUser, async function (req, res, next) {
   try {
     await Company.remove(req.params.handle);
     return res.json({ deleted: req.params.handle });

@@ -180,6 +180,7 @@ describe("GET /users", function () {
     await db.query("DROP TABLE users CASCADE");
     const resp = await request(app)
       .get("/users")
+      .set("authorization", `Bearer ${adminToken}`)
     expect(resp.statusCode).toEqual(500);
   });
 });
@@ -335,7 +336,7 @@ describe("DELETE /users/:username", function () {
     const resp = await request(app)
       .delete(`/users/u1`)
       .set("authorization", `Bearer ${adminToken}`);
-      
+
     expect(resp.body).toEqual({ deleted: "u1" });
   });
 

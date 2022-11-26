@@ -71,18 +71,30 @@ class Company {
 
   static async get(handle) {
     const companyRes = await db.query(
-      `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           WHERE handle = $1`,
+      `SELECT c.handle,
+          c.name,
+          c.description,
+          c.num_employees,
+          c.logo_url,
+          j.id,
+          j.title,
+          j.salary,
+          j.equity
+           FROM companies AS c JOIN jobs AS j
+          ON c.handle=j.company_handle
+           WHERE c.handle = $1`,
       [handle]);
 
-    const company = companyRes.rows[0];
-
-    if (!company) throw new NotFoundError(`No company: ${handle}`);
+    const {name,description,num_employees,logo_url} = companyRes.rows[0];
+    const jobs=[]
+    companyRes.rows.forEach((j)=>{
+      jobs.push({"id":j.id,
+        "title":j.title,
+        "salary":j.salary,
+        "equity":j.equity})})
+     
+     const company={handle, name, description, num_employees, logo_url, jobs}
+     if (!company) throw new NotFoundError(`No company: ${handle}`);
 
     return company;
   }
@@ -91,8 +103,8 @@ class Company {
     /** re-purposing sqlForPartialUpdate - changes to read query and populate     */
     const keys = Object.keys(query);
     /**checking if min greater than max  */
-    if (query.minEmployees >= query.maxEmployees) 
-      throw new ExpressError("Min cannot be greater than max", 400) 
+    if (query.minEmployees >= query.maxEmployees)
+      throw new ExpressError("Min cannot be greater than max", 400)
     /**mapping keys to SQL expressions using booleans */
     const cols = keys.map((colName, idx) =>
       colName.includes("min") ? `num_employees>$${idx + 1}` : colName.includes("max") ? `num_employees<$${idx + 1}` :
@@ -112,7 +124,7 @@ class Company {
        FROM companies WHERE ${filterVars.setCols}
         ORDER BY name
        `, filterVars.values);
-       /** if nothing returns throw error */
+    /** if nothing returns throw error */
     if (companiesRes.rows.length === 0) {
       return new ExpressError("No companies match that criteria", 400)
     }

@@ -5,7 +5,7 @@
 const jsonschema = require("jsonschema");
 
 const express = require("express");
-const { ensureLoggedIn, checkAdmin } = require("../middleware/auth");
+const { ensureLoggedIn, checkAdminorActiveUser } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const User = require("../models/user");
 const { createToken } = require("../helpers/tokens");
@@ -27,7 +27,7 @@ const router = express.Router();
  * Authorization required: login
  **/
 
-router.post("/", checkAdmin, async function (req, res, next) {
+router.post("/", checkAdminorActiveUser, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, userNewSchema);
     if (!validator.valid) {
@@ -51,7 +51,7 @@ router.post("/", checkAdmin, async function (req, res, next) {
  * Authorization required: login as Admin or as current User
  **/
 
-router.get("/", checkAdmin, async function (req, res, next) {
+router.get("/", checkAdminorActiveUser, async function (req, res, next) {
   try {
     const users = await User.findAll();
     return res.json({ users });
@@ -68,7 +68,7 @@ router.get("/", checkAdmin, async function (req, res, next) {
  * Authorization required: login as Admin or as current User
  **/
 
-router.get("/:username", checkAdmin, async function (req, res, next) {
+router.get("/:username", checkAdminorActiveUser, async function (req, res, next) {
   try {
     const user = await User.get(req.params.username);
     return res.json({ user });
@@ -88,7 +88,7 @@ router.get("/:username", checkAdmin, async function (req, res, next) {
  * Authorization required: login as Admin or as current User
  **/
 
-router.patch("/:username", checkAdmin, async function (req, res, next) {
+router.patch("/:username", checkAdminorActiveUser, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, userUpdateSchema);
     if (!validator.valid) {
@@ -109,7 +109,7 @@ router.patch("/:username", checkAdmin, async function (req, res, next) {
  * Authorization required: login as Admin or as current User
  **/
 
-router.delete("/:username", checkAdmin, async function (req, res, next) {
+router.delete("/:username", checkAdminorActiveUser, async function (req, res, next) {
   try {
     await User.remove(req.params.username);
     return res.json({ deleted: req.params.username });
@@ -118,5 +118,19 @@ router.delete("/:username", checkAdmin, async function (req, res, next) {
   }
 });
 
+/** POST /[username,id] => {applied: id}  
+ * 
+ *  Authorization required: login as Admin or as current User
+ */
+router.post("/:username/jobs/:id",
+    checkAdminorActiveUser,
+    async function(req,res,next){
+      try{
+        const apply = await User.apply(req.params.username, req.params.id);
+        return res.json(`Applied: ${req.params.id}`)
+      }catch(err){
+        return next(err)
+      }
+})
 
 module.exports = router;

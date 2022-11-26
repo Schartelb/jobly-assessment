@@ -82,7 +82,7 @@ describe("findAll", function () {
         ]);
     });
 
-    /************************************** get */
+    /************************************** get specific */
 
 describe("get", function () {
     test("works", async function () {
@@ -90,7 +90,7 @@ describe("get", function () {
       expect(job).toEqual({
                 title: 'title1',
                 salary: 10,
-                equity: '0.1',
+                equity: '0',
                 company_handle: 'c1'
             });
     });
@@ -105,3 +105,49 @@ describe("get", function () {
     });
   });
 });
+
+/************************************** filteredby */
+
+describe("findFiltered", function () {
+    test("works: filter by title", async function () {
+    let job = await Job.getfiltered({ title: 'title1' });
+      expect(job).toEqual([
+        {
+          title:"title1",
+          salary:10,
+          equity:"0",
+          company_handle:"c1"
+        }
+      ]);
+    });
+    ;
+    test("works: filter by minSalary", async function () {
+      let job = await Job.getfiltered({ minSalary: 25 });
+      expect(job).toEqual([
+        {
+            title:"title3",
+            salary:30,
+            equity:"0.3",
+            company_handle:"c3"
+        }
+      ]);
+    });
+    test("works: filter by hasEquity false", async function () {
+      let job = await Job.getfiltered({ hasEquity: false });
+      expect(job).toEqual([
+        {
+            title:"title1",
+            salary:10,
+            equity:"0",
+            company_handle:"c1"
+        }
+      ]);
+    });
+
+    test("works: No companies with those values", async function () {
+  
+      let response = await job.getfiltered({ name: "D" });
+      expect(response.status).toEqual(400);
+      ;
+    })
+  })

@@ -31,11 +31,13 @@ async function commonBeforeAll() {
 
   await db.query(`
       INSERT INTO jobs(title,salary,equity,company_handle)
-      VALUES ('title1', '10', '.1', 'c1'),
+      VALUES ('title1', '10', '0', 'c1'),
              ('title2', '20', '.2', 'c2'),
              ('title3', '30', '.3', 'c3')`)
 }
-
+await db.query(`
+INSERT INTO applications(username, job_id)
+  VALUES ('u1','j1')`)
 async function commonBeforeEach() {
   await db.query("BEGIN");
 }
